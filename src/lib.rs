@@ -1,5 +1,5 @@
-extern crate hyper;
-extern crate futures;
+pub extern crate hyper;
+pub extern crate futures;
 
 use std::net::SocketAddr;
 use std::collections::HashMap;
@@ -8,7 +8,7 @@ use hyper::{ Request, Response, Method, StatusCode };
 use futures::future::FutureResult;
 
 pub struct Chiisai {
-    routes: HashMap<(Method, String), Box<Route>>,
+    routes: HashMap<(Method, String), Box<Route<Method = Method>>>,
     port: u64,
 }
 
@@ -20,8 +20,8 @@ impl Chiisai {
         }
     }
 
-    pub fn route(mut self, method: Method, route: &str, handler: Box<Route>) -> Self {
-        self.routes.insert( (method, route.into()), handler);
+    pub fn routes(mut self, routes: HashMap<(Method, String), Box<Route<Method = Method>>>) -> Self {
+        self.routes = routes;
         self
     }
 
@@ -65,5 +65,45 @@ impl<'c> Service for &'c Chiisai
 }
 
 pub trait Route {
+    type Method;
     fn handler(&self, Request) -> FutureResult<Response, hyper::Error>;
+    fn method(&self) -> Self::Method;
 }
+
+#[macro_export]
+macro_rules! router {
+    ($( ($route: expr, $handler: expr))*) => {
+        {
+            use std::collections::HashMap;
+            let mut map = HashMap::new();
+            $(
+                let boxed: Box<Route<Method = hyper::Method>> = Box::new($handler);
+                map.insert((boxed.method(), $route.to_string()), boxed);
+            )*
+            map
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! routes {
+    ($(($method: ident, $type: ident, $function: expr))*) => {
+        use hyper::server::{ Request, Response };
+        use futures::future::FutureResult;
+        $(
+        struct $type;
+        impl Route for $type {
+            type Method = hyper::Method;
+            fn handler(&self, _req: Request) -> FutureResult<Response, hyper::Error> {
+                #[inline(always)]
+                $function(_req)
+            }
+            #[inline(always)]
+            fn method(&self) -> Self::Method {
+                hyper::Method::$method
+            }
+        }
+        )*
+    }
+}
+
