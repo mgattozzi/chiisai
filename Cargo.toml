@@ -1,0 +1,22 @@
+[package]
+name = "chiisai"
+version = "0.1.0"
+authors = ["Michael Gattozzi <mgattozzi@gmail.com>"]
+description = "A micro framework for micro services!"
+license = "MIT/Apache-2.0"
+repository = "https://github.com/mgattozzi/chiisai.git"
+homepage = "https://github.com/mgattozzi/chiisai"
+documentation = "https://docs.rs/chiisai/"
+readme = "README.md"
+
+[badges]
+travis-ci = { repository = "mgattozzi/chiisai", branch = "master" }
+appveyor = { repository = "mgattozzi/chiisai", branch = "master", service = "github" }
+
+[dependencies]
+hyper = "0.11"
+futures = "0.1"
+
+[profile.dev]
+
+[profile.release]
