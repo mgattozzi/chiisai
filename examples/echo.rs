@@ -1,4 +1,6 @@
 #[macro_use] extern crate chiisai;
+extern crate hyper;
+extern crate futures;
 
 // Imports traits and the rexported hyper and futures crates
 use chiisai::*;
@@ -33,13 +35,13 @@ routes!(
         if let Some(len) = req.headers().get::<ContentLength>() {
             res.headers_mut().set(len.clone());
         }
-        ok(res.with_body(req.body()))
+        Box::new(ok(res.with_body(req.body())))
     })
 
     (Get, GetEcho, |_| {
-        ok(Response::new()
+        Box::new(ok(Response::new()
                     .with_header(ContentLength(INDEX.len() as u64))
-                    .with_body(INDEX))
+                    .with_body(INDEX)))
 
     })
 );
