@@ -1,4 +1,6 @@
 #[macro_use] extern crate chiisai;
+extern crate hyper;
+extern crate futures;
 
 // Imports traits and the rexported hyper and futures crates
 use chiisai::*;
@@ -23,10 +25,10 @@ fn main() {
 routes!(
     (Get, Parameter, |req: Request| {
         println!("{:?}", req);
-        ok(Response::new())
+        Box::new(ok(Response::new()))
     })
     (Post, PostParameter, |req: Request| {
         println!("{:?}", req);
-        ok(Response::new())
+        Box::new(ok(Response::new()))
     })
 );

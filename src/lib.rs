@@ -1,12 +1,13 @@
-pub extern crate hyper;
-pub extern crate futures;
+extern crate hyper;
+extern crate futures;
 extern crate url;
 
 use std::net::SocketAddr;
 use std::collections::HashMap;
 use hyper::server::{ Http, Service };
 use hyper::{ Request, Response, Method, StatusCode };
-use futures::future::{ FutureResult, ok, err };
+use futures::prelude::*;
+use futures::future::{ok, err};
 use url::Url;
 use std::io::{ Error, ErrorKind };
 
@@ -14,7 +15,7 @@ macro_rules! ftry {
     ($exp: expr) => {
         match $exp {
             Ok(exp) => exp,
-            Err(e) => return err(Io(Error::new(ErrorKind::Other, e))),
+            Err(e) => return Box::new(err(Io(Error::new(ErrorKind::Other, e)))),
         }
     }
 }
@@ -68,7 +69,7 @@ impl<'c> Service for &'c Chiisai
     type Request = Request;
     type Response = Response;
     type Error = hyper::Error;
-    type Future = FutureResult<Response, hyper::Error>;
+    type Future = Box<Future<Item = Response, Error = hyper::Error>>;
 
     fn call(&self, req: Request) -> Self::Future {
         let path = req.path().to_owned();
@@ -118,7 +119,7 @@ impl<'c> Service for &'c Chiisai
                         return self.routes.get(&(method.to_owned(), url.to_owned())).unwrap().handler(req);
                     }
                 }
-                ok(Response::new().with_status(StatusCode::NotFound))
+                Box::new(ok(Response::new().with_status(StatusCode::NotFound)))
             },
         }
     }
@@ -127,7 +128,7 @@ impl<'c> Service for &'c Chiisai
 
 pub trait Route {
     type Method;
-    fn handler(&self, Request) -> FutureResult<Response, hyper::Error>;
+    fn handler(&self, Request) -> Box<Future<Item = Response, Error = hyper::Error>>;
     fn method(&self) -> Self::Method;
 }
 
@@ -150,12 +151,12 @@ macro_rules! router {
 macro_rules! routes {
     ($(($method: ident, $type: ident, $function: expr))*) => {
         use hyper::server::{ Request, Response };
-        use futures::future::FutureResult;
+        use futures::future::Future;
         $(
         struct $type;
         impl Route for $type {
             type Method = hyper::Method;
-            fn handler(&self, _req: Request) -> FutureResult<Response, hyper::Error> {
+            fn handler(&self, _req: Request) -> Box<Future<Item = Response, Error = hyper::Error>> {
                 #[inline(always)]
                 $function(_req)
             }
