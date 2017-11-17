@@ -54,7 +54,7 @@ impl Chiisai {
 
     pub fn run(self) -> Result<(), hyper::Error>
     {
-        let address_str = "127.0.0.1:".to_string() + &self.port.to_string();
+        let address_str = "0.0.0.0:".to_string() + &self.port.to_string();
         let address: SocketAddr = address_str.parse().unwrap();
         println!("Running server on {}", address);
         Http::new()
