@@ -86,7 +86,13 @@ impl<'c> Service for &'c Chiisai
                 // correct hanlder, otherwise we return a 404.
                 use hyper::Error::Io;
                 let base = ftry!(Url::parse("https://localhost"));
+                let mut catch_all = false;
+                let mut catch_all_method = hyper::Method::Get;
                 for &(ref method, ref url) in self.routes.keys() {
+                    if url == "/*" {
+                        catch_all = true;
+                        catch_all_method = method.to_owned();
+                    }
                     // The methods don't match so skip them
                     if method != req.method() {
                         continue;
@@ -116,9 +122,20 @@ impl<'c> Service for &'c Chiisai
                     }
 
                     if matched {
-                        return self.routes.get(&(method.to_owned(), url.to_owned())).unwrap().handler(req);
+                        return self.routes
+                                   .get(&(method.to_owned(), url.to_owned()))
+                                   .unwrap()
+                                   .handler(req);
                     }
                 }
+
+                if catch_all {
+                    return self.routes
+                               .get(&(catch_all_method, "/*".to_owned()))
+                               .unwrap()
+                               .handler(req);
+                }
+
                 Box::new(ok(Response::new().with_status(StatusCode::NotFound)))
             },
         }
