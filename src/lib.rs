@@ -99,8 +99,8 @@ impl<'c> Service for &'c Chiisai
                     }
                     let url_in = ftry!(base.clone().join(&url));
                     let test = ftry!(base.clone().join(&req.path()));
-                    let mut url_in= ftry_opt!(url_in.path_segments());
-                    let mut test = ftry_opt!(test.path_segments());
+                    let url_in= ftry_opt!(url_in.path_segments());
+                    let test = ftry_opt!(test.path_segments());
 
                     let size1 = url_in.clone().count();
                     let size2 = test.clone().count();
@@ -158,6 +158,19 @@ macro_rules! router {
             $(
                 let boxed: Box<Route<Method = hyper::Method>> = Box::new($handler);
                 map.insert((boxed.method(), $route.to_string()), boxed);
+            )*
+            map
+        }
+    };
+    ($( ($route: expr, $handler: expr))*, ($cors: expr)) => {
+        {
+            use std::collections::HashMap;
+            let mut map = HashMap::new();
+            $(
+                let boxed: Box<Route<Method = hyper::Method>> = Box::new($handler);
+                map.insert((boxed.method(), $route.to_string()), boxed);
+                let cors: Box<Route<Method = hyper::Method>> = Box::new($cors);
+                map.insert((cors.method(), $route.to_string()), cors);
             )*
             map
         }
