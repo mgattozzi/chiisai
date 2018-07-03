@@ -186,8 +186,8 @@ macro_rules! routes {
         struct $type;
         impl Route for $type {
             type Method = hyper::Method;
+            #[inline(always)]
             fn handler(&self, _req: Request) -> Box<Future<Item = Response, Error = hyper::Error>> {
-                #[inline(always)]
                 $function(_req)
             }
             #[inline(always)]
